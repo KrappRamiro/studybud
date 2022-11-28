@@ -1,0 +1,26 @@
+{% comment %} Container for the rooms {% endcomment %}
+<div>
+   {% for room in rooms %}
+      <div>
+         <a href="{% url 'user-profile' room.host.id %} ">@{{ room.host.username }}</a>
+         {% comment %} Display the edit and delete buttons if you are the owner of the rooms {% endcomment %}
+         {% if request.user == room.host %}
+            -----
+            <a href="{% url 'update-room' room.id %}">Edit</a>
+            <a href=" {% url 'delete-room' room.id %} ">Delete</a>
+         {% endif %}
+         <h5>
+            {{ room.id }} --
+            <a href="{% url 'room' room.id %}">
+               <!-- The value inside the '' depends on the name="" we defined in urls.py-->
+               {{ room.name }}
+            </a>
+         </h5>
+         <small>
+            <p>{{ room.description }}</p>
+         </small>
+         <small>{{ room.topic.name }}</small>
+         <hr />
+      </div>
+   {% endfor %}
+</div>

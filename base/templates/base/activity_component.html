@@ -1,0 +1,27 @@
+<style>
+	.recent-activity-container{
+		padding-left:20px;
+	}
+</style>
+<div class="recent-activity-container">
+   <h3>Recent Activity</h3>
+   <hr/>
+   {% for message in room_messages %}
+      <div>
+         {% if request.user == message.user %}
+            <small>
+               <a href="{% url 'delete-message' message.id %}">Delete</a>
+               <a href="{% url 'update-message' message.id %}">Edit</a>
+            </small>
+            <br/>
+         {% endif %}
+         <small>
+            <a href="{% url 'user-profile' message.user.id %}">@{{ message.user }}</a>   {{ message.created|timesince }}
+         </small>
+         <br/>
+         <small>Replied to post: "{{ message.room }}"</small>
+         <p>{{ message.body }}</p>
+         <hr/>
+      </div>
+   {% endfor %}
+</div>
