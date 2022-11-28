@@ -6,6 +6,7 @@ class RoomForm(ModelForm):
     class Meta:
         model = Room  # The form is automatically created based on the Room model
         fields = '__all__'  # Gets all the fields from the Room model
+        exclude = ['host', 'participants']
 
 
 class MessageForm(ModelForm):

@@ -1,6 +1,10 @@
+{% load static %}
 <a href="{% url 'home' %}">
    <h1>LoGo</h1>
 </a>
+<img src="{% static 'images/tux.png' %}"
+     alt="linux penguin"
+     height="100px"/>
 <form action="{% url 'home' %}" method="get">
    <input type="text" name="q" placeholder="Search Rooms..."/>
 </form>
