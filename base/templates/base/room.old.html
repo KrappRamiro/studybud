@@ -1,0 +1,51 @@
+{% extends "main.html" %}
+{% block content %}
+   <style>
+	.room-container{
+		display: grid;
+		grid-template-columns: 3fr 1fr
+	}
+	.participants-sidebar{
+		padding-left: 20px;
+	}
+   </style>
+   <div class="room-container">
+      <div class="chat-container">
+         <h1>Room: {{ room.name }}</h1>
+         <p>{{ room.host }}</p>
+         <hr/>
+         <p>{{ room.description }}</p>
+         <div class="comment-wrapper">
+            <h3>Conversation</h3>
+            <hr/>
+            {% for message in room_messages %}
+               <div>
+                  {% comment %} The | is a filter {% endcomment %}
+                  <small>@{{ message.user }}  {{ message.created|timesince }} ago</small>
+                  {% if request.user == message.user %}
+                     -----
+                     <a href="{% url 'delete-message' message.id %}">Delete</a>
+                     <a href="{% url 'update-message' message.id %}">Edit</a>
+                  {% endif %}
+                  <p>{{ message.body }}</p>
+                  <hr/>
+               </div>
+            {% endfor %}
+            {% if request.user.is_authenticated %}
+               <hr/>
+               <div class="comment-form">
+                  <form action="" method="post">
+                     {% csrf_token %}
+                     <input type="text" name="body" placeholder="Write your message here..."/>
+                  </form>
+               </div>
+            {% endif %}
+         </div>
+      </div>
+      <div class="participants-sidebar">
+         <h3>Participants</h3>
+         <hr/>
+         {% for participant in participants %}<p>@{{ participant.username }}</p>{% endfor %}
+      </div>
+   </div>
+{% endblock content %}

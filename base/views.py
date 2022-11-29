@@ -134,39 +134,57 @@ def userProfile(request, pk):
 @login_required(login_url="login")
 def createRoom(request):
     form = RoomForm()
+    topics = Topic.objects.all()
     if request.method == 'POST':
         # Fills the form with the data from the POST request
-        form = RoomForm(request.POST)
-        if form.is_valid():
-            print("Form for createRoom is valid")
-            room = form.save(commit=False)
-            room.host = request.user
-            # Saves the form in the database, based in the Room modal
-            room.save()
-            return redirect('home')
-    context = {'form': form}
+        # i think its .get("topic") because <input name="topic"/>
+        topic_name = request.POST.get('topic')
+        # Created is a boolean, and its value depends if topic_name was created (True) or if topic_name was found and got (False)
+        # topic will always have a value, and it depends on topic_name
+        topic, created = Topic.objects.get_or_create(name=topic_name)
+        Room.objects.create(
+            host=request.user,
+            topic=topic,
+            name=request.POST.get("name"),
+            description=request.POST.get('description')
+        )
+        ''' Old way of doing it, no longer valid since we can now create custom topics by just typing them
+         form = RoomForm(request.POST)
+         if form.is_valid():
+             room = form.save(commit=False)
+             room.host = request.user
+             # Saves the form in the database, based in the Room modal
+             room.save()
+        '''
+        return redirect('home')
+    context = {'form': form, 'topics': topics}
     return render(request, 'base/room_form.html', context)
 
 
 @login_required(login_url="login")
 def updateRoom(request, pk):
-    room = Room.objects.get(id=pk)
+    room = Room.objects.get(id=pk)  # Get the room to edit
+    topics = Topic.objects.all()  # Get the list of topics
     # We want to get some data prefilled, to know what Room we are editing.
     # Because of that, we use instance = room
-    form = RoomForm(instance=room)
+    form = RoomForm(instance=room)  # Get the form with the prefilled values
 
     # Check if the user editing the room is the owner of the room
     if request.user != room.host:
         return HttpResponse('You are not allowed here!')
 
     if request.method == 'POST':
-        # We use instance=room to tell it which room to update. If we dont do that, it will just create another room
-        form = RoomForm(request.POST, instance=room)
-        if form.is_valid():
-            form.save()
-            return redirect('home')
-
-    context = {'form': form}
+        topic_name = request.POST.get('topic')  # Get the topic from the form
+        # Created is a boolean, and its value depends if topic_name was created (True) or if topic_name was found and got (False)
+        # topic will always have a value, and it depends on topic_name
+        topic, created = Topic.objects.get_or_create(name=topic_name)
+        room.name = request.POST.get('name')  # Get the name from the form
+        room.topic = topic  # Get the topic from get_or_create
+        room.description = request.POST.get(
+            'description')  # Get the desc from the form
+        room.save()  # Save the room in the db using the values set earlier in the code
+        return redirect('home')
+    context = {'form': form, 'topics': topics, 'room': room}
     return render(request, 'base/room_form.html', context)
 
 
