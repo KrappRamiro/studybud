@@ -1,5 +1,5 @@
 from .models import Room, Topic, Message
-from .forms import RoomForm, MessageForm
+from .forms import RoomForm, MessageForm, UserForm
 from django.http import HttpResponse
 from django.db.models import Q
 from django.shortcuts import render, redirect
@@ -8,6 +8,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
+from django.db.models import Count
 
 # Create your views here.
 
@@ -25,7 +26,7 @@ def loginPage(request):
         return redirect('home')
 
     if request.method == "POST":
-        username = request.POST.get('username').lower()
+        username = request.POST.get('username')
         password = request.POST.get('password')
 
         try:
@@ -58,7 +59,7 @@ def registerPage(request):
             # Instead, it saves the data from the form in the user variable
             # We do that because we want to modify the data
             user = form.save(commit=False)
-            user.username = user.username.lower()
+            user.username = user.username
             user.save()
             messages.info(request, f"Created user {user.username}")
             # We can login the user with the data from the form because we used UserCreationForm, i guess ?
@@ -83,11 +84,15 @@ def home(request):
         Q(name__icontains=q) |
         Q(description__icontains=q)
     )
-    topics = Topic.objects.all()
+    #topics = Topic.objects.all()
+    # https://stackoverflow.com/questions/23033769/django-order-by-count
+    topics = Topic.objects.annotate(
+        count=Count('room')).order_by('-count')[0:5]  # [0:5] to get the first five
     room_count = rooms.count()
     room_messages = Message.objects.filter(
         Q(room__topic__name__icontains=q)
     )
+    print(User.objects.all())
 
     context = {'rooms': rooms, 'topics': topics,
                'room_count': room_count, 'room_messages': room_messages}
@@ -238,3 +243,35 @@ def updateMessage(request, pk):
 
     context = {'form': form}
     return render(request, 'base/room_form.html', context)
+
+
+@login_required(login_url="login")
+def updateUser(request):
+    user = request.user
+    form = UserForm(instance=user)
+
+    if request.method == 'POST':
+        # I use instance=user so form.save() updates the info. If i didnt use it, form.save() would create a new user
+        form = UserForm(request.POST, instance=user)
+        if form.is_valid():
+            form.save()
+            return redirect('user-profile', pk=user.id)
+
+    context = {'form': form}
+    return render(request, 'base/update-user.html', context)
+
+
+def topicsPage(request):
+    q = request.GET.get('q') if request.GET.get('q') != None else ''
+    # topics = Topic.objects.filter(name__icontains=q)
+    # https://stackoverflow.com/questions/23033769/django-order-by-count
+    topics = Topic.objects.annotate(
+        count=Count('room')).order_by('-count').filter(name__icontains=q)
+    context = {'topics': topics}
+    return render(request, 'base/topics.html', context)
+
+
+def activityPage(request):
+    room_messages = Message.objects.all()
+    context = {'room_messages': room_messages}
+    return render(request, "base/activity.html", context)
